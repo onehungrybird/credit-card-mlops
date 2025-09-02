@@ -2,6 +2,7 @@ version: "3.9"
 
 services:
   mlflow:
+    image: ghcr.io/${{ github.repository_owner }}/mlflow:latest
     build:
       context: .
       dockerfile: Dockerfile.mlflow
@@ -13,6 +14,7 @@ services:
       - ./mlflow-data:/mlflow
 
   api:
+    image: ghcr.io/${{ github.repository_owner }}/creditcard-api:latest
     build:
       context: .
       dockerfile: Dockerfile.api

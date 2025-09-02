@@ -33,13 +33,4 @@ __pycache__/
 mlruns/
 mlflow.log
 
-# ----------------------
-# MODELS
-# ----------------------
-models/
-!*.dvc        # but keep model .dvc files
-
-# ----------------------
-# MISC
-# ----------------------
 *.DS_Store

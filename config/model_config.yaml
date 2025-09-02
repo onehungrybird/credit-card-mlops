@@ -1,0 +1,23 @@
+models:
+  random_forest:
+    n_estimators: 100
+    max_depth: 10
+    min_samples_split: 5
+    min_samples_leaf: 2
+    class_weight: 'balanced'
+    n_jobs: -1
+    
+  xgboost:
+    n_estimators: 100
+    max_depth: 6
+    learning_rate: 0.1
+    subsample: 0.8
+    colsample_bytree: 0.8
+    scale_pos_weight: 100  # Handle class imbalance
+    eval_metric: 'auc'
+    use_label_encoder: false
+
+training:
+  test_size: 0.2
+  random_state: 42
+  stratify: true

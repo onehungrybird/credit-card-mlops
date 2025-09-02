@@ -1,0 +1,27 @@
+# Core ML Libraries
+pandas>1.5.3
+numpy>1.26.0
+scikit-learn
+xgboost
+joblib
+
+# MLflow
+mlflow
+
+# FastAPI and serving
+fastapi
+uvicorn
+pydantic
+
+# Utilities
+pyyaml
+python-dotenv==1.0.0
+click==8.1.7
+
+# Testing
+pytest==7.4.3
+pytest-asyncio==0.21.1
+
+# Development
+black==23.10.1
+flake8==6.1.0

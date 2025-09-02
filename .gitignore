@@ -1,0 +1,45 @@
+# ----------------------
+# DATA
+# ----------------------
+
+# Ignore raw/processed data files (tracked via DVC instead)
+data/
+!*.dvc        # keep DVC metadata files
+!.gitignore   # keep local ignore rules if present
+
+# ----------------------
+# ENVIRONMENTS
+# ----------------------
+venv/
+.env
+*.env
+
+# ----------------------
+# PYTHON
+# ----------------------
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ----------------------
+# LOGS
+# ----------------------
+*.log
+
+# ----------------------
+# MLFLOW
+# ----------------------
+mlruns/
+mlflow.log
+
+# ----------------------
+# MODELS
+# ----------------------
+models/
+!*.dvc        # but keep model .dvc files
+
+# ----------------------
+# MISC
+# ----------------------
+*.DS_Store

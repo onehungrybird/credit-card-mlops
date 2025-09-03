@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI):
     """Load model and scaler on startup."""
     global model, scaler
     try:
-        model_path = "models/artifacts/model"
+        model_path = "models:/credit-card-fraud-model/Staging"
         scaler_path = "models/scaler.joblib"
 
         if not os.path.exists(model_path):

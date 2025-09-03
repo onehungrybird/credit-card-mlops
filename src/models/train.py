@@ -12,6 +12,7 @@ import mlflow.xgboost
 import joblib
 import yaml
 import click
+from mlflow.tracking import MlflowClient
 
 class FraudDetectionModel:
     def __init__(self, config_path="config/model_config.yaml"):
@@ -118,11 +119,20 @@ def main(data_path, experiment_name):
         best_model = models[best_model_name]
         best_auc = results[best_model_name]['auc_score']
         
-        # Log best model
+        # Log and register best model
+        model_info = None
         if best_model_name == 'xgboost':
-            mlflow.xgboost.log_model(best_model, "model")
+            model_info = mlflow.xgboost.log_model(
+                best_model,
+                artifact_path="model",
+            registered_model_name="credit-card-fraud-model"  # ← This creates/updates registry
+            )
         else:
-            mlflow.sklearn.log_model(best_model, "model")
+            model_info = mlflow.sklearn.log_model(
+                best_model,
+                artifact_path="model",
+            registered_model_name="credit-card-fraud-model"
+            )
             
         mlflow.log_param("best_model", best_model_name)
         mlflow.log_metric("best_auc", best_auc)
@@ -133,8 +143,31 @@ def main(data_path, experiment_name):
         mlflow.log_artifact(scaler_path)
         
         print(f"\nBest model: {best_model_name} with AUC: {best_auc:.4f}")
-        # ✅ NEW: Export model to local path for API
-        # -----------------------------------------------------------
+        
+        
+        # AUTO-PROMOTION TO STAGING IF METRIC THRESHOLD IS MET
+        client = MlflowClient()
+        AUC_THRESHOLD = 0.96
+        # Get the latest version of the registered model
+        latest_version = client.get_latest_versions("credit-card-fraud-model", stages=["None"])[0]
+        if best_auc >= AUC_THRESHOLD:
+            print(f"📈 AUC {best_auc:.4f} >= {AUC_THRESHOLD} → promoting version {latest_version.version} to 'Staging'")
+            client.transition_model_version_stage(
+                name="credit-card-fraud-model",
+                version=latest_version.version,
+                stage="Staging"
+            )
+        else:
+            print(f"📉 AUC {best_auc:.4f} < {AUC_THRESHOLD} → not promoting to Staging")
+
+        # Optional:add a reason
+        client.update_model_version(
+            name="credit-card-fraud-model",
+            version=latest_version.version,
+            description=f"Model trained with AUC={best_auc:.4f}. Promoted to Staging: {best_auc >= AUC_THRESHOLD}"
+        )
+
+        # Export model to local path for API
         print("Exporting model for API...")
         os.makedirs("models/artifacts", exist_ok=True)
 
@@ -143,7 +176,7 @@ def main(data_path, experiment_name):
         # Download model files from MLflow run
         local_model_path = mlflow.artifacts.download_artifacts(artifact_uri=model_uri, dst_path="models/artifacts/")
 
-        print(f"✅ Model exported to {local_model_path}")
+        print(f"Model exported to {local_model_path}")
 
 if __name__ == "__main__":
     main()

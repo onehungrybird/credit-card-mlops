@@ -62,7 +62,7 @@ jobs:
             cd /home/ubuntu/credit-card-fraud-detection1
             git pull origin main  # Optional: sync code (e.g. new compose file)
             
-            # 🔐 Log in to GitHub Container Registry
+            # Log in to GitHub Container Registry
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             
             docker compose pull

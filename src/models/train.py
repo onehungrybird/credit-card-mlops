@@ -148,17 +148,18 @@ def main(data_path, experiment_name):
         # AUTO-PROMOTION TO STAGING IF METRIC THRESHOLD IS MET
         client = MlflowClient()
         AUC_THRESHOLD = 0.96
+
         # Get the latest version of the registered model
         latest_version = client.get_latest_versions("credit-card-fraud-model", stages=["None"])[0]
         if best_auc >= AUC_THRESHOLD:
-            print(f"📈 AUC {best_auc:.4f} >= {AUC_THRESHOLD} → promoting version {latest_version.version} to 'Staging'")
+            print(f"AUC {best_auc:.4f} >= {AUC_THRESHOLD} → promoting version {latest_version.version} to 'Staging'")
             client.transition_model_version_stage(
                 name="credit-card-fraud-model",
                 version=latest_version.version,
                 stage="Staging"
             )
         else:
-            print(f"📉 AUC {best_auc:.4f} < {AUC_THRESHOLD} → not promoting to Staging")
+            print(f"AUC {best_auc:.4f} < {AUC_THRESHOLD} → not promoting to Staging")
 
         # Optional:add a reason
         client.update_model_version(

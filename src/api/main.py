@@ -40,16 +40,16 @@ async def lifespan(app: FastAPI):
         model = mlflow.pyfunc.load_model(model_path)
         scaler = joblib.load(scaler_path)
 
-        logger.info("✅ Model and scaler loaded successfully.")
-        logger.info("🟢 API is ready to serve predictions.")
+        logger.info("Model and scaler loaded successfully.")
+        logger.info("API is ready to serve predictions.")
 
     except Exception as e:
-        logger.error(f"❌ Failed to load artifacts: {e}")
+        logger.error(f"Failed to load artifacts: {e}")
         raise e
 
     yield
 
-    logger.info("🧹 Shutting down: clearing resources.")
+    logger.info("Shutting down: clearing resources.")
     model = None
     scaler = None
 

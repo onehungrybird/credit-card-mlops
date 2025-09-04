@@ -12,7 +12,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy dependencies
 COPY requirements.txt pyproject.toml ./
 
-# Install Python dependencies
+# Install Python dependencies — with fix for starlette-prometheus
+# Step 1: Force reinstall the correct version of starlette-prometheus
+RUN pip install --no-cache-dir --force-reinstall "starlette-prometheus==0.10.0" --no-deps
+
+# Step 2: Install all other packages (including the rest of requirements.txt)
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy source code and models

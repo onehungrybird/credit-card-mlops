@@ -55,7 +55,7 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=grafana_password  # Change in prod!
-      - GF_SERVER_ROOT_URL=http://<YOUR-EC2-PUBLIC-IP>:3000  # Optional
+      - GF_SERVER_ROOT_URL=http://http://98.80.224.211/:3000  # Optional
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning

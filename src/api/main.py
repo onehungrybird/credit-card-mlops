@@ -63,9 +63,7 @@ app = FastAPI(
 # Add Prometheus middleware
 app.add_middleware(
     PrometheusMiddleware,
-    app_name="creditcard_api",
-    group_paths=True,
-    buckets=[0.01, 0.05, 0.1, 0.5, 1.0, 2.5, 5.0],  # Latency buckets
+    filter_unhandled_paths=True
 )
 app.add_route("/metrics", metrics)
 

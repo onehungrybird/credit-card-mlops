@@ -27,5 +27,6 @@ black==23.10.1
 flake8==6.1.0
 
 # prometheus & graphana
-starlette-prometheus==0.10.0
 python-json-logger==2.0.7
+prometheus-client==0.17.1
+tenacity==8.2.3

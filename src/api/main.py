@@ -25,6 +25,13 @@ FEATURE_COLUMNS = [
     'V28', 'Amount'
 ]
 
+# === Retry Logic for Model Loading ===
+from tenacity import retry, stop_after_attempt, wait_fixed
+
+@retry(stop=stop_after_attempt(5), wait=wait_fixed(2))
+def load_model_with_retry():
+    return mlflow.pyfunc.load_model(model_path)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Load model and scaler on startup."""

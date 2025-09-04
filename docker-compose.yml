@@ -30,6 +30,7 @@ services:
     volumes:
       - ./models:/app/models:ro
       - ./config:/app/config:ro
+      - ./mlflow-data:/mlflow:ro
 
   # === Prometheus ===
   prometheus:

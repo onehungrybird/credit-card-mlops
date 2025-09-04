@@ -7,6 +7,7 @@ import mlflow.pyfunc
 import os
 from typing import Optional
 import logging
+from pythonjsonlogger import jsonlogger
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -32,19 +33,16 @@ async def lifespan(app: FastAPI):
         model_path = "models:/credit-card-fraud-model/Staging"
         scaler_path = "models/scaler.joblib"
 
-        if not os.path.exists(model_path):
-            raise FileNotFoundError(f"Model not found at {model_path}")
         if not os.path.exists(scaler_path):
             raise FileNotFoundError(f"Scaler not found at {scaler_path}")
 
+        # Load model (MLflow)
         model = mlflow.pyfunc.load_model(model_path)
         scaler = joblib.load(scaler_path)
 
         logger.info("Model and scaler loaded successfully.")
-        logger.info("API is ready to serve predictions.")
-
     except Exception as e:
-        logger.error(f"Failed to load artifacts: {e}")
+        logger.error(f"Failed to load artifacts: {str(e)}")
         raise e
 
     yield
@@ -53,12 +51,23 @@ async def lifespan(app: FastAPI):
     model = None
     scaler = None
 
+# === FastAPI App with Prometheus ===
+from starlette_prometheus import PrometheusMiddleware, metrics
 app = FastAPI(
     title="Credit Card Fraud Detection API",
     description="API for detecting fraudulent credit card transactions",
     version="1.0.0",
     lifespan=lifespan
 )
+
+# Add Prometheus middleware
+app.add_middleware(
+    PrometheusMiddleware,
+    app_name="creditcard_api",
+    group_paths=True,
+    buckets=[0.01, 0.05, 0.1, 0.5, 1.0, 2.5, 5.0],  # Latency buckets
+)
+app.add_route("/metrics", metrics)
 
 # Request model
 class TransactionInput(BaseModel):
@@ -90,30 +99,29 @@ async def root():
     return {
         "message": "Credit Card Fraud Detection API",
         "version": "1.0.0",
-        "endpoints": ["/health", "/predict"]
+        "endpoints": ["/health", "/predict", "/metrics"]
     }
 
+# === Predict Endpoint with Logging ===
 @app.post("/predict", response_model=PredictionResponse)
-async def predict_fraud(transaction: TransactionInput):
+async def predict_fraud(transaction: TransactionInput, request: Request):
+    client_ip = request.client.host
+    logger.info("Prediction request received", extra={
+        "client_ip": client_ip,
+        "amount": transaction.Amount,
+        "time": transaction.Time
+    })
+
     if model is None:
+        logger.error("Prediction failed: model not loaded")
         raise HTTPException(status_code=503, detail="Service not ready: model not loaded")
 
     try:
         input_data = pd.DataFrame([transaction.dict()])
+        input_for_model = input_data[FEATURE_COLUMNS]
 
-        # Keep all features your model was trained on
-        model_features = ['Time'] + [f'V{i}' for i in range(1, 29)] + ['Amount']
-        input_for_model = input_data[model_features]
-
-        # Use model.predict() for PyFuncModel
         pred = model.predict(input_for_model)
-
-        # If the model returns probabilities in a 2D array
-        if hasattr(pred[0], "__len__"):
-            fraud_probability = float(pred[0][1])
-        else:
-            fraud_probability = float(pred[0])
-
+        fraud_probability = float(pred[0][1]) if hasattr(pred[0], "__len__") else float(pred[0])
         is_fraud = fraud_probability > 0.5
 
         confidence = (
@@ -122,6 +130,12 @@ async def predict_fraud(transaction: TransactionInput):
             else "low"
         )
 
+        logger.info("Prediction successful", extra={
+            "is_fraud": is_fraud,
+            "fraud_probability": round(fraud_probability, 4),
+            "confidence": confidence
+        })
+
         return PredictionResponse(
             is_fraud=is_fraud,
             fraud_probability=round(fraud_probability, 4),
@@ -129,9 +143,8 @@ async def predict_fraud(transaction: TransactionInput):
         )
 
     except Exception as e:
-        logger.error(f"Prediction error: {e}")
+        logger.error("Prediction failed", extra={"error": str(e)})
         raise HTTPException(status_code=500, detail=f"Prediction failed: {e}")
-
 
 def start_server():
     import uvicorn
